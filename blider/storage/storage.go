@@ -84,3 +84,29 @@ func (s *Storage) ClearStorage() error {
 	_, err := s.db.Exec("delete from wallpapers")
 	return err
 }
+
+func (s *Storage) IsOriginURLAlreadyPresented(originUrl string) (bool, error) {
+	queryFormat := "select * from wallpapers where origin_url = \"%s\""
+	query := fmt.Sprintf(queryFormat, originUrl)
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return false, err
+	}
+
+	var wallpapers []*Wallpaper
+
+	for rows.Next() {
+		w := &Wallpaper{}
+		if err := rows.Scan(&w.ID,
+			&w.OriginURL,
+			&w.Filename,
+			&w.FetchTimestamp,
+		); err != nil {
+			return false, err
+		}
+		wallpapers = append(wallpapers, w)
+	}
+
+	return len(wallpapers) != 0, nil
+}

@@ -1,8 +1,10 @@
-package simpledesktops
+package blider
 
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -14,9 +16,9 @@ type Config struct {
 	// FetchPeriod is time period of fetching new wallpapers. Requires the same format like ChangePeriod.  Default: 1m.
 	FetchPeriod Period `json:"fetch_period,omitempty"`
 	// Mode represents way of selecting wallpaper to set: latest or random. Default: random.
-	Mode Mode `json:"mode,omitempty"`
-	// MaxStorageSize is max count of wallpapers stored on disk. Default: 100.
-	MaxStorageSize uint `json:"max_storage_size,omitempty"`
+	Mode            Mode   `json:"mode,omitempty"`
+	StoragePath     string `json:"storage_path"`
+	MaxFetchThreads int    `json:"max_fetch_threads"`
 }
 
 func FromFile(filename string) (*Config, error) {
@@ -34,8 +36,14 @@ func FromFile(filename string) (*Config, error) {
 		c.Mode = ModeRandom
 	}
 
-	if c.MaxStorageSize == 0 {
-		c.MaxStorageSize = 100
+	c.StoragePath = strings.TrimSpace(c.StoragePath)
+	if len(c.StoragePath) == 0 {
+		homeDir, _ := os.UserHomeDir()
+		c.StoragePath = path.Join(homeDir, ".blider", "images")
+	}
+
+	if c.MaxFetchThreads <= 0 {
+		c.MaxFetchThreads = 4
 	}
 
 	return c, nil

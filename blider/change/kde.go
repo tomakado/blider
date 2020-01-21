@@ -1,8 +1,8 @@
-package changer
+package change
 
 import (
 	"fmt"
-	"github.com/ildarkarymoff/blider/blider"
+	config2 "github.com/ildarkarymoff/blider/blider/config"
 	"github.com/ildarkarymoff/blider/blider/storage"
 	"log"
 	"os/exec"
@@ -23,10 +23,10 @@ const (
 )
 
 type KDEChanger struct {
-	config *blider.Config
+	config *config2.Config
 }
 
-func NewKDEChanger(config *blider.Config) *KDEChanger {
+func NewKDEChanger(config *config2.Config) *KDEChanger {
 	return &KDEChanger{
 		config: config,
 	}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"log"
 )
 
 type Wallpaper struct {
@@ -15,7 +16,8 @@ type Wallpaper struct {
 }
 
 type Storage struct {
-	db *sql.DB
+	db               *sql.DB
+	HasAnyWallpapers bool
 }
 
 func Open(dbPath string) (*Storage, error) {
@@ -43,6 +45,26 @@ func (s *Storage) AddWallpaper(wallpaper *Wallpaper) error {
 	)
 	if _, err := s.db.Exec(query); err != nil {
 		return err
+	}
+
+	s.HasAnyWallpapers = true
+
+	return nil
+}
+
+func (s *Storage) AddWallpapers(wallpapers []*Wallpaper) error {
+	for _, w := range wallpapers {
+		presented, err := s.IsOriginURLAlreadyPresented(w.OriginURL)
+		if err != nil {
+			log.Printf("[Check if is wallpaper already downloaded earlier] %v", err)
+			continue
+		}
+
+		if !presented {
+			if err := s.AddWallpaper(w); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil

@@ -1,4 +1,4 @@
-package changer
+package change
 
 import "github.com/ildarkarymoff/blider/blider/storage"
 

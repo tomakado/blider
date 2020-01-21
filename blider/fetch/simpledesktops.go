@@ -1,10 +1,10 @@
-package fetcher
+package fetch
 
 import (
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/ildarkarymoff/blider/blider"
+	config2 "github.com/ildarkarymoff/blider/blider/config"
 	"github.com/ildarkarymoff/blider/blider/storage"
 	"github.com/zenthangplus/goccm"
 	"io/ioutil"
@@ -20,12 +20,12 @@ const (
 )
 
 type SimpleDesktopsFetcher struct {
-	config     *blider.Config
+	config     *config2.Config
 	storage    *storage.Storage
 	wallpapers []*storage.Wallpaper
 }
 
-func (f SimpleDesktopsFetcher) Init(config *blider.Config) {
+func (f SimpleDesktopsFetcher) Init(config *config2.Config) {
 	f.config = config
 }
 
@@ -53,7 +53,7 @@ func (f SimpleDesktopsFetcher) Fetch(limit int) []*storage.Wallpaper {
 	return f.wallpapers
 }
 
-func (f *SimpleDesktopsFetcher) fetchFromOrigin(url string) {
+func (f SimpleDesktopsFetcher) fetchFromOrigin(url string) {
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Printf("[Fetch %s] %v", url, err)
@@ -140,7 +140,7 @@ func downloadImageToBuffer(url string) (string, []byte, error) {
 	return filename, img, nil
 }
 
-func (f *SimpleDesktopsFetcher) saveImage(filename string, image []byte) {
+func (f SimpleDesktopsFetcher) saveImage(filename string, image []byte) {
 	filepath := path.Join(f.config.LocalStoragePath, filename)
 	if err := ioutil.WriteFile(filepath, image, os.ModePerm); err != nil {
 		log.Fatalf("failed to write image to %s", filename)

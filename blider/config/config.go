@@ -1,4 +1,4 @@
-package blider
+package config
 
 import (
 	"encoding/json"

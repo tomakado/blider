@@ -1,8 +1,8 @@
 package fetcher
 
 import (
-	"github.com/ildarkarymoff/kde-simpledesktops/blider"
-	"github.com/ildarkarymoff/kde-simpledesktops/blider/storage"
+	"github.com/ildarkarymoff/blider/blider"
+	"github.com/ildarkarymoff/blider/blider/storage"
 )
 
 type IFetcher interface {

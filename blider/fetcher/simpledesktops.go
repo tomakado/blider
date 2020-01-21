@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/ildarkarymoff/kde-simpledesktops/blider"
-	"github.com/ildarkarymoff/kde-simpledesktops/blider/storage"
+	"github.com/ildarkarymoff/blider/blider"
+	"github.com/ildarkarymoff/blider/blider/storage"
 	"github.com/zenthangplus/goccm"
 	"io/ioutil"
 	"log"
@@ -141,7 +141,7 @@ func downloadImageToBuffer(url string) (string, []byte, error) {
 }
 
 func (f *SimpleDesktopsFetcher) saveImage(filename string, image []byte) {
-	filepath := path.Join(f.config.StoragePath, filename)
+	filepath := path.Join(f.config.LocalStoragePath, filename)
 	if err := ioutil.WriteFile(filepath, image, os.ModePerm); err != nil {
 		log.Fatalf("failed to write image to %s", filename)
 	}

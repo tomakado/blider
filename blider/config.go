@@ -17,7 +17,8 @@ type Config struct {
 	FetchPeriod Period `json:"fetch_period,omitempty"`
 	// Mode represents way of selecting wallpaper to set: latest or random. Default: random.
 	Mode               Mode   `json:"mode,omitempty"`
-	StoragePath        string `json:"storage_path"`
+	LocalStoragePath   string `json:"local_storage_path"`
+	DBPath             string `json:"db_path"`
 	MaxFetchGoroutines int    `json:"max_fetch_goroutines"`
 	MaxFetchPages      int    `json:"max_fetch_pages"`
 }
@@ -37,10 +38,16 @@ func FromFile(filename string) (*Config, error) {
 		c.Mode = ModeRandom
 	}
 
-	c.StoragePath = strings.TrimSpace(c.StoragePath)
-	if len(c.StoragePath) == 0 {
-		homeDir, _ := os.UserHomeDir()
-		c.StoragePath = path.Join(homeDir, ".blider", "images")
+	homeDir, _ := os.UserHomeDir()
+
+	c.LocalStoragePath = strings.TrimSpace(c.LocalStoragePath)
+	if len(c.LocalStoragePath) == 0 {
+		c.LocalStoragePath = path.Join(homeDir, ".blider", "images")
+	}
+
+	c.DBPath = strings.TrimSpace(c.DBPath)
+	if len(c.DBPath) == 0 {
+		c.DBPath = path.Join(homeDir, ".blider", "blider.sqlite")
 	}
 
 	if c.MaxFetchGoroutines <= 0 {

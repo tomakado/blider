@@ -16,9 +16,10 @@ type Config struct {
 	// FetchPeriod is time period of fetching new wallpapers. Requires the same format like ChangePeriod.  Default: 1m.
 	FetchPeriod Period `json:"fetch_period,omitempty"`
 	// Mode represents way of selecting wallpaper to set: latest or random. Default: random.
-	Mode            Mode   `json:"mode,omitempty"`
-	StoragePath     string `json:"storage_path"`
-	MaxFetchThreads int    `json:"max_fetch_threads"`
+	Mode               Mode   `json:"mode,omitempty"`
+	StoragePath        string `json:"storage_path"`
+	MaxFetchGoroutines int    `json:"max_fetch_goroutines"`
+	MaxFetchPages      int    `json:"max_fetch_pages"`
 }
 
 func FromFile(filename string) (*Config, error) {
@@ -42,8 +43,12 @@ func FromFile(filename string) (*Config, error) {
 		c.StoragePath = path.Join(homeDir, ".blider", "images")
 	}
 
-	if c.MaxFetchThreads <= 0 {
-		c.MaxFetchThreads = 4
+	if c.MaxFetchGoroutines <= 0 {
+		c.MaxFetchGoroutines = 4
+	}
+
+	if c.MaxFetchPages <= 0 {
+		c.MaxFetchPages = 10
 	}
 
 	return c, nil

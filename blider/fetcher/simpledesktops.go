@@ -25,16 +25,16 @@ type SimpleDesktopsFetcher struct {
 	wallpapers []*storage.Wallpaper
 }
 
-func (f *SimpleDesktopsFetcher) Init(config *blider.Config) {
+func (f SimpleDesktopsFetcher) Init(config *blider.Config) {
 	f.config = config
 }
 
 // Fetch tries to parse and download images from http://simpledesktops.com.
 // Parameter limit means max count of pages to visit.
-func (f *SimpleDesktopsFetcher) Fetch(limit int) []*storage.Wallpaper {
+func (f SimpleDesktopsFetcher) Fetch(limit int) []*storage.Wallpaper {
 	f.wallpapers = []*storage.Wallpaper{}
 
-	manager := goccm.New(f.config.MaxFetchThreads)
+	manager := goccm.New(f.config.MaxFetchGoroutines)
 	pageCounter := 1
 
 	for pageCounter < limit {

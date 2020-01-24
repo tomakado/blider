@@ -35,7 +35,6 @@ func (f *SimpleDesktopsProvider) Init(config *config.Config, storage *storage.St
 }
 
 // Provide tries to parse and download images from http://simpledesktops.com.
-// Parameter limit means max count of pages to visit.
 func (f *SimpleDesktopsProvider) Provide() *storage.Wallpaper {
 	log.Println("Fetching from http://simpledesktops.com...")
 
@@ -43,7 +42,7 @@ func (f *SimpleDesktopsProvider) Provide() *storage.Wallpaper {
 
 	for wallpaper == nil || wallpaper.ID == 0 {
 		rand.Seed(time.Now().UnixNano())
-		pageNum := rand.Intn(f.maxFetchPages)
+		pageNum := rand.Intn(f.maxFetchPages-1) + 1
 		url := fmt.Sprintf(entryPointURL, pageNum)
 		log.Printf("Fetching %s...", url)
 
@@ -134,7 +133,7 @@ func (f *SimpleDesktopsProvider) tryToPickFrom(url string) *storage.Wallpaper {
 
 		pageUrl = fmt.Sprintf("http://simpledesktops.com%s", pageUrl)
 
-		filename, img, err := fetchWallpaperFromPage(pageUrl)
+		filename, img, err := pullWallpaperFromPage(pageUrl)
 		if err != nil {
 			log.Printf("[Provide wallpaper from %s] %v", pageUrl, err)
 			return &storage.Wallpaper{}
@@ -163,7 +162,7 @@ func (f *SimpleDesktopsProvider) tryToPickFrom(url string) *storage.Wallpaper {
 	return selectedWallpaper
 }
 
-func fetchWallpaperFromPage(url string) (string, []byte, error) {
+func pullWallpaperFromPage(url string) (string, []byte, error) {
 	log.Printf("Fetching image from wallpaper page: %s", url)
 	resp, err := http.Get(url)
 	if err != nil {

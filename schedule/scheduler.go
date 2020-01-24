@@ -72,6 +72,7 @@ func (s *Scheduler) init() error {
 }
 
 func (s *Scheduler) changeOp() error {
+	log.Println("Change desktop wallpaper operation triggered")
 	wallpaper := (*s.fetcher).Provide()
 	if err := (*s.changer).Change(wallpaper); err != nil {
 		return err
@@ -83,5 +84,7 @@ func (s *Scheduler) changeOp() error {
 		wallpaper.Author,
 		wallpaper.OriginURL,
 	)
+
+	log.Printf("Paused for %s", s.config.Period)
 	return nil
 }

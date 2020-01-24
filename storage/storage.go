@@ -12,6 +12,9 @@ type Wallpaper struct {
 	OriginURL      string
 	Filename       string
 	FetchTimestamp uint
+	Title          string
+	Author         string
+	AuthorURL      string
 }
 
 type Storage struct {
@@ -34,12 +37,22 @@ func (s *Storage) Close() error {
 }
 
 func (s *Storage) AddWallpaper(wallpaper *Wallpaper) (int64, error) {
-	queryFormat := "insert into wallpapers (origin_url, filename, fetch_timestamp) values ('%s', '%s', %d)"
+	queryFormat := `insert into wallpapers (
+						origin_url,
+						filename,
+						fetch_timestamp,
+						title,
+						author,
+						author_url)
+					values ('%s', '%s', %d, '%s', '%s', '%s')`
 	query := fmt.Sprintf(
 		queryFormat,
 		wallpaper.OriginURL,
 		wallpaper.Filename,
 		wallpaper.FetchTimestamp,
+		wallpaper.Title,
+		wallpaper.Author,
+		wallpaper.AuthorURL,
 	)
 
 	result, err := s.db.Exec(query)

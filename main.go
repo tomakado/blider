@@ -4,7 +4,7 @@ import (
 	"flag"
 	"github.com/ildarkarymoff/blider/change"
 	"github.com/ildarkarymoff/blider/config"
-	"github.com/ildarkarymoff/blider/fetch"
+	"github.com/ildarkarymoff/blider/provider"
 	"github.com/ildarkarymoff/blider/schedule"
 	"log"
 	"os"
@@ -24,7 +24,7 @@ func main() {
 		log.Fatalf("failed to load config from %s: %v", *configPath, err)
 	}
 
-	fetcher := &fetch.SimpleDesktopsFetcher{}
+	fetcher := &provider.SimpleDesktopsProvider{}
 	changer := change.NewKDEChanger(cfg)
 
 	scheduler := schedule.NewScheduler(fetcher, changer)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/ildarkarymoff/blider/change"
 	"github.com/ildarkarymoff/blider/config"
-	"github.com/ildarkarymoff/blider/fetch"
+	"github.com/ildarkarymoff/blider/provider"
 	"github.com/ildarkarymoff/blider/storage"
 	"log"
 	"time"
@@ -13,13 +13,13 @@ import (
 type Scheduler struct {
 	config  *config.Config
 	period  *time.Ticker
-	fetcher *fetch.IFetcher
+	fetcher *provider.IProvider
 	changer *change.IChanger
 	storage *storage.Storage
 }
 
 func NewScheduler(
-	fetcher fetch.IFetcher,
+	fetcher provider.IProvider,
 	changer change.IChanger,
 ) *Scheduler {
 	return &Scheduler{
@@ -72,6 +72,16 @@ func (s *Scheduler) init() error {
 }
 
 func (s *Scheduler) changeOp() error {
-	wallpaper := (*s.fetcher).Fetch()
-	return (*s.changer).Change(wallpaper)
+	wallpaper := (*s.fetcher).Provide()
+	if err := (*s.changer).Change(wallpaper); err != nil {
+		return err
+	}
+
+	log.Printf(
+		"Background changed to '%s' by %s (%s)",
+		wallpaper.Title,
+		wallpaper.Author,
+		wallpaper.OriginURL,
+	)
+	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"log"
 	"os/exec"
 	"path"
+	"strings"
 	"syscall"
 )
 
@@ -63,14 +64,15 @@ func (c KDEChanger) Change(wallpaper *storage.Wallpaper) error {
 		}
 	}
 
-	if output.Len() > 0 {
+	outputStr := strings.TrimSpace(output.String())
+	if len(outputStr) > 0 {
 		log.Println(output.String())
 	}
 
-	if errs.Len() > 0 {
+	errsStr := strings.TrimSpace(errs.String())
+	if len(errsStr) > 0 {
 		log.Println(errs.String())
 	}
 
-	log.Printf("Background changed to %s", filepath)
 	return nil
 }

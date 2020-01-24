@@ -1,4 +1,4 @@
-package fetch
+package provider
 
 import (
 	"errors"
@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 	"time"
 )
 
@@ -20,44 +21,57 @@ const (
 	entryPointURL = "http://simpledesktops.com/browse/%d"
 )
 
-type SimpleDesktopsFetcher struct {
-	config  *config.Config
-	storage *storage.Storage
+type SimpleDesktopsProvider struct {
+	config        *config.Config
+	storage       *storage.Storage
+	maxFetchPages int
 }
 
-func (f *SimpleDesktopsFetcher) Init(config *config.Config, storage *storage.Storage) {
-	log.Println("Initializing SimpleDesktopsFetcher...")
+func (f *SimpleDesktopsProvider) Init(config *config.Config, storage *storage.Storage) {
+	log.Println("Initializing SimpleDesktopsProvider...")
 	f.config = config
 	f.storage = storage
+	f.maxFetchPages = f.config.MaxFetchPages
 }
 
-// Fetch tries to parse and download images from http://simpledesktops.com.
+// Provide tries to parse and download images from http://simpledesktops.com.
 // Parameter limit means max count of pages to visit.
-func (f *SimpleDesktopsFetcher) Fetch() *storage.Wallpaper {
+func (f *SimpleDesktopsProvider) Provide() *storage.Wallpaper {
 	log.Println("Fetching from http://simpledesktops.com...")
 
 	var wallpaper *storage.Wallpaper
 
 	for wallpaper == nil || wallpaper.ID == 0 {
 		rand.Seed(time.Now().UnixNano())
-		pageNum := rand.Intn(f.config.MaxFetchPages)
+		pageNum := rand.Intn(f.maxFetchPages)
 		url := fmt.Sprintf(entryPointURL, pageNum)
 		log.Printf("Fetching %s...", url)
 
-		wallpaper = f.fetchFromOrigin(url)
+		wallpaper = f.tryToPickFrom(url)
 
-		time.Sleep(time.Duration(f.config.SleepTime) * time.Second)
-		//})
+		// Here maxFetchPages is being approximated to real amount
+		// pages on the website on each iteration.
+
+		// Example: The website has 50 pages and maxFetchPages
+		// is equal to 50. Imagine we try to parse page #80 on
+		// first iteration. After parsing we get wallpaper equal
+		// nil. So that means page #80 does not exist (at least
+		// has no wallpapers). Consequently we don't need to
+		// look at pages 81, 82, 83, etc. Also we (hope that we)
+		// can't get 404 error on page #35 if we have 50 pages
+		// on website at all.
+		if wallpaper == nil && f.maxFetchPages > pageNum {
+			f.maxFetchPages = pageNum - 1
+		}
 	}
-	//l.Wait()
 
 	return wallpaper
 }
 
-func (f *SimpleDesktopsFetcher) fetchFromOrigin(url string) *storage.Wallpaper {
+func (f *SimpleDesktopsProvider) tryToPickFrom(url string) *storage.Wallpaper {
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Printf("[Fetch %s] %v", url, err)
+		log.Printf("[Provide %s] %v", url, err)
 		return &storage.Wallpaper{}
 	}
 	defer resp.Body.Close()
@@ -78,47 +92,72 @@ func (f *SimpleDesktopsFetcher) fetchFromOrigin(url string) *storage.Wallpaper {
 		rand.Seed(time.Now().UnixNano())
 		desktopIndex := rand.Intn(desktops.Length())
 
+		pageUrl := ""
+		pageUrlExists := false
+		title := ""
+		author := ""
+		authorUrl := ""
+
 		doc.
 			Find(".desktops").
 			Find(".edge").
 			Each(func(i int, selection *goquery.Selection) {
 				if i == desktopIndex {
-					log.Printf("Parsing HTML element #%d...", (i + 1))
-					pageURL, exists := selection.
+					log.Printf("Parsing HTML element #%d...", i+1)
+					wallpaperLink := selection.
 						Find(".desktop").
-						Find("a").
-						Attr("href")
+						Find("a")
 
-					if !exists {
-						log.Printf("Failed to find link wallpaper page on page %s", pageURL)
-						return
+					pageUrl, pageUrlExists = wallpaperLink.Attr("href")
+					title = selection.
+						Find(".desktop").
+						Find("h2").
+						Text()
+
+					authorLink := selection.
+						Find(".desktop").
+						Find(".creator").
+						Find("a")
+
+					author = strings.TrimSpace(authorLink.Text())
+					if len(author) == 0 {
+						author = "Unknown"
 					}
-
-					pageURL = fmt.Sprintf("http://simpledesktops.com/%s", pageURL)
-
-					filename, img, err := fetchWallpaperFromPage(pageURL)
-					if err != nil {
-						log.Printf("[Fetch wallpaper from %s] %v", pageURL, err)
-						return
-					}
-
-					wallpaper := &storage.Wallpaper{
-						OriginURL:      pageURL,
-						Filename:       filename,
-						FetchTimestamp: uint(time.Now().Unix()),
-					}
-
-					id, err := f.storage.AddWallpaper(wallpaper)
-					if err != nil {
-						log.Printf("[Save wallpaper to database] %v", err)
-						return
-					}
-
-					f.saveImage(filename, img)
-					wallpaper.ID = id
-					selectedWallpaper = wallpaper
+					authorUrl, _ = authorLink.Attr("href")
 				}
 			})
+
+		if !pageUrlExists {
+			log.Printf("Failed to find link wallpaper page on page %s", pageUrl)
+			return &storage.Wallpaper{}
+		}
+
+		pageUrl = fmt.Sprintf("http://simpledesktops.com%s", pageUrl)
+
+		filename, img, err := fetchWallpaperFromPage(pageUrl)
+		if err != nil {
+			log.Printf("[Provide wallpaper from %s] %v", pageUrl, err)
+			return &storage.Wallpaper{}
+		}
+
+		wallpaper := &storage.Wallpaper{
+			OriginURL:      pageUrl,
+			Filename:       filename,
+			FetchTimestamp: uint(time.Now().Unix()),
+			Title:          title,
+			Author:         author,
+			AuthorURL:      authorUrl,
+		}
+
+		id, err := f.storage.AddWallpaper(wallpaper)
+		if err != nil {
+			log.Printf("[Save wallpaper to database] %v", err)
+			return &storage.Wallpaper{}
+		}
+
+		f.saveImage(filename, img)
+		wallpaper.ID = id
+		selectedWallpaper = wallpaper
 	}
 
 	return selectedWallpaper
@@ -178,7 +217,7 @@ func downloadImageToBuffer(url string) (string, []byte, error) {
 	return filename, img, nil
 }
 
-func (f *SimpleDesktopsFetcher) saveImage(filename string, image []byte) {
+func (f *SimpleDesktopsProvider) saveImage(filename string, image []byte) {
 	if _, err := os.Stat(f.config.LocalStoragePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(f.config.LocalStoragePath, os.ModePerm); err != nil {
 			log.Fatalf(
@@ -190,8 +229,6 @@ func (f *SimpleDesktopsFetcher) saveImage(filename string, image []byte) {
 	}
 
 	filepath := path.Join(f.config.LocalStoragePath, filename)
-	log.Printf("Saving image to %s...", filepath)
-
 	if err := ioutil.WriteFile(filepath, image, os.ModePerm); err != nil {
 		log.Fatalf("Failed to write image to %s: %v", filepath, err)
 	}

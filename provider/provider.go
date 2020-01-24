@@ -1,11 +1,11 @@
-package fetch
+package provider
 
 import (
 	"github.com/ildarkarymoff/blider/config"
 	"github.com/ildarkarymoff/blider/storage"
 )
 
-type IFetcher interface {
+type IProvider interface {
 	Init(config *config.Config, storage *storage.Storage)
-	Fetch() *storage.Wallpaper
+	Provide() *storage.Wallpaper
 }

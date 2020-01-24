@@ -21,7 +21,7 @@ func main() {
 
 	cfg, err := config.FromFile(*configPath)
 	if err != nil {
-		log.Fatalf("failed to load config from %s: %v", *configPath, err)
+		log.Fatalf("Failed to load config from %s: %v", *configPath, err)
 	}
 
 	fetcher := &provider.SimpleDesktopsProvider{}
@@ -29,6 +29,6 @@ func main() {
 
 	scheduler := schedule.NewScheduler(fetcher, changer)
 	if err := scheduler.Start(cfg); err != nil {
-		log.Fatalf("failed to start schedule: %v", err)
+		log.Fatalf("Failed to start scheduler: %v", err)
 	}
 }

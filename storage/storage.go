@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"log"
+	"os"
 )
 
 type Wallpaper struct {
@@ -22,6 +24,14 @@ type Storage struct {
 }
 
 func Open(dbPath string) (*Storage, error) {
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		log.Println("Instantiating new database...")
+		if err := createDatabase(dbPath); err != nil {
+			return nil, err
+		}
+		log.Println("Database created")
+	}
+
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, err
@@ -32,12 +42,41 @@ func Open(dbPath string) (*Storage, error) {
 	}, nil
 }
 
+func createDatabase(dbPath string) error {
+	file, err := os.OpenFile(dbPath, os.O_RDONLY|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	_ = file.Close()
+
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	query := `CREATE TABLE history (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		origin_url TEXT,
+		filename TEXT,
+		fetch_timestamp INTEGER,
+		title TEXT,
+		author TEXT,
+		author_url TEXT
+	)`
+	if _, err := db.Exec(query); err != nil {
+		return fmt.Errorf("[Instantiate SQLite Database] %v", err)
+	}
+
+	return nil
+}
+
 func (s *Storage) Close() error {
 	return s.db.Close()
 }
 
 func (s *Storage) AddWallpaper(wallpaper *Wallpaper) (int64, error) {
-	queryFormat := `insert into wallpapers (
+	queryFormat := `insert into history (
 						origin_url,
 						filename,
 						fetch_timestamp,
@@ -69,7 +108,7 @@ func (s *Storage) AddWallpaper(wallpaper *Wallpaper) (int64, error) {
 }
 
 func (s *Storage) GetWallpaper(id int) (*Wallpaper, error) {
-	queryFormat := "select * from wallpapers where id = %d"
+	queryFormat := "select * from history where id = %d"
 	query := fmt.Sprintf(queryFormat, id)
 
 	rows, err := s.db.Query(query)
@@ -101,12 +140,12 @@ func (s *Storage) GetWallpaper(id int) (*Wallpaper, error) {
 
 func (s *Storage) ClearStorage() error {
 	//noinspection SqlWithoutWhere
-	_, err := s.db.Exec("delete from wallpapers")
+	_, err := s.db.Exec("delete from history")
 	return err
 }
 
 func (s *Storage) IsOriginURLAlreadyPresented(originUrl string) (bool, error) {
-	queryFormat := "select * from wallpapers where origin_url = \"%s\""
+	queryFormat := "select * from history where origin_url = \"%s\""
 	query := fmt.Sprintf(queryFormat, originUrl)
 
 	rows, err := s.db.Query(query)

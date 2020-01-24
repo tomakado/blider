@@ -5,19 +5,17 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
-	"log"
 )
 
 type Wallpaper struct {
-	ID             int
+	ID             int64
 	OriginURL      string
 	Filename       string
 	FetchTimestamp uint
 }
 
 type Storage struct {
-	db               *sql.DB
-	HasAnyWallpapers bool
+	db *sql.DB
 }
 
 func Open(dbPath string) (*Storage, error) {
@@ -35,7 +33,7 @@ func (s *Storage) Close() error {
 	return s.db.Close()
 }
 
-func (s *Storage) AddWallpaper(wallpaper *Wallpaper) error {
+func (s *Storage) AddWallpaper(wallpaper *Wallpaper) (int64, error) {
 	queryFormat := "insert into wallpapers (origin_url, filename, fetch_timestamp) values ('%s', '%s', %d)"
 	query := fmt.Sprintf(
 		queryFormat,
@@ -43,31 +41,18 @@ func (s *Storage) AddWallpaper(wallpaper *Wallpaper) error {
 		wallpaper.Filename,
 		wallpaper.FetchTimestamp,
 	)
-	if _, err := s.db.Exec(query); err != nil {
-		return err
+
+	result, err := s.db.Exec(query)
+	if err != nil {
+		return 0, err
 	}
 
-	s.HasAnyWallpapers = true
-
-	return nil
-}
-
-func (s *Storage) AddWallpapers(wallpapers []*Wallpaper) error {
-	for _, w := range wallpapers {
-		presented, err := s.IsOriginURLAlreadyPresented(w.OriginURL)
-		if err != nil {
-			log.Printf("[Check if is wallpaper already downloaded earlier] %v", err)
-			continue
-		}
-
-		if !presented {
-			if err := s.AddWallpaper(w); err != nil {
-				return err
-			}
-		}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
 	}
 
-	return nil
+	return id, nil
 }
 
 func (s *Storage) GetWallpaper(id int) (*Wallpaper, error) {

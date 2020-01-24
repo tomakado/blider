@@ -12,15 +12,14 @@ import (
 
 type Config struct {
 	// ChangePeriod is time period of changing wallpaper. Examples: 1h, 3m, 15s. Default: 1m (1 minute).
-	ChangePeriod Period `json:"change_period,omitempty"`
-	// FetchPeriod is time period of fetching new wallpapers. Requires the same format like ChangePeriod.  Default: 1m.
-	FetchPeriod Period `json:"fetch_period,omitempty"`
+	Period Period `json:"period,omitempty"`
 	// Mode represents way of selecting wallpaper to set: latest or random. Default: random.
 	Mode               Mode   `json:"mode,omitempty"`
 	LocalStoragePath   string `json:"local_storage_path"`
 	DBPath             string `json:"db_path"`
 	MaxFetchGoroutines int    `json:"max_fetch_goroutines"`
 	MaxFetchPages      int    `json:"max_fetch_pages"`
+	SleepTime          int    `json:"sleep_time"`
 }
 
 func FromFile(filename string) (*Config, error) {
@@ -58,6 +57,10 @@ func FromFile(filename string) (*Config, error) {
 		c.MaxFetchPages = 10
 	}
 
+	if c.SleepTime <= 0 {
+		c.SleepTime = 3
+	}
+
 	return c, nil
 }
 
@@ -77,7 +80,7 @@ func (p *Period) ToTime() (time.Duration, error) {
 	}
 
 	var scale time.Duration
-	scaleKey := pStr[len(pStr)-2:]
+	scaleKey := pStr[len(pStr)-1:]
 
 	switch scaleKey {
 	case "h":

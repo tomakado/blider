@@ -1,6 +1,5 @@
 {
-  "change_period": "30s",
-  "fetch_period": "5m",
+  "period": "30s",
   "db_path": "blider.sqlite",
   "max_fetch_goroutines": 10,
   "max_fetch_pages": 100

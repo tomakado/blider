@@ -2,10 +2,10 @@ package main
 
 import (
 	"flag"
-	"github.com/ildarkarymoff/blider/blider/change"
-	"github.com/ildarkarymoff/blider/blider/config"
-	"github.com/ildarkarymoff/blider/blider/fetch"
-	"github.com/ildarkarymoff/blider/blider/schedule"
+	"github.com/ildarkarymoff/blider/change"
+	"github.com/ildarkarymoff/blider/config"
+	"github.com/ildarkarymoff/blider/fetch"
+	"github.com/ildarkarymoff/blider/schedule"
 	"log"
 	"os"
 	"path"

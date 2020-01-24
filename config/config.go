@@ -11,9 +11,7 @@ import (
 )
 
 type Config struct {
-	// ChangePeriod is time period of changing wallpaper. Examples: 1h, 3m, 15s. Default: 1m (1 minute).
-	Period Period `json:"period,omitempty"`
-	// Mode represents way of selecting wallpaper to set: latest or random. Default: random.
+	Period           Period `json:"period,omitempty"`
 	LocalStoragePath string `json:"local_storage_path"`
 	DBPath           string `json:"db_path"`
 	MaxFetchPages    int    `json:"max_fetch_pages"`

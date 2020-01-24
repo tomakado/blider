@@ -14,12 +14,9 @@ type Config struct {
 	// ChangePeriod is time period of changing wallpaper. Examples: 1h, 3m, 15s. Default: 1m (1 minute).
 	Period Period `json:"period,omitempty"`
 	// Mode represents way of selecting wallpaper to set: latest or random. Default: random.
-	Mode               Mode   `json:"mode,omitempty"`
-	LocalStoragePath   string `json:"local_storage_path"`
-	DBPath             string `json:"db_path"`
-	MaxFetchGoroutines int    `json:"max_fetch_goroutines"`
-	MaxFetchPages      int    `json:"max_fetch_pages"`
-	SleepTime          int    `json:"sleep_time"`
+	LocalStoragePath string `json:"local_storage_path"`
+	DBPath           string `json:"db_path"`
+	MaxFetchPages    int    `json:"max_fetch_pages"`
 }
 
 func FromFile(filename string) (*Config, error) {
@@ -31,10 +28,6 @@ func FromFile(filename string) (*Config, error) {
 	var c *Config
 	if err := json.Unmarshal(f, &c); err != nil {
 		return nil, err
-	}
-
-	if !(c.Mode == ModeLatest || c.Mode == ModeRandom) {
-		c.Mode = ModeRandom
 	}
 
 	homeDir, _ := os.UserHomeDir()
@@ -49,16 +42,8 @@ func FromFile(filename string) (*Config, error) {
 		c.DBPath = path.Join(homeDir, ".blider", "blider.sqlite")
 	}
 
-	if c.MaxFetchGoroutines <= 0 {
-		c.MaxFetchGoroutines = 4
-	}
-
 	if c.MaxFetchPages <= 0 {
 		c.MaxFetchPages = 10
-	}
-
-	if c.SleepTime <= 0 {
-		c.SleepTime = 3
 	}
 
 	return c, nil
@@ -95,10 +80,3 @@ func (p *Period) ToTime() (time.Duration, error) {
 
 	return time.Duration(numVal) * scale, nil
 }
-
-type Mode string
-
-const (
-	ModeLatest Mode = "latest"
-	ModeRandom Mode = "random"
-)

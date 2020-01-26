@@ -10,19 +10,29 @@ import (
 )
 
 type Wallpaper struct {
-	ID             int64
-	OriginURL      string
-	Filename       string
+	ID int64
+	// OriginURL is URL of web page where wallpaper has been taken.
+	OriginURL string
+	// Filename is name of the file in local image storage.
+	Filename string
+	// FetchTimestamp is a time when wallpaper has been fetched and downloaded.
 	FetchTimestamp uint
-	Title          string
-	Author         string
-	AuthorURL      string
+	// Title is original title of wallpaper on source website.
+	Title string
+	// Author is full name or nickname of image publisher (optional).
+	Author string
+	// AuthorURL is author's homepage address (optional).
+	AuthorURL string
 }
 
+// Storage allows other program modules to make operations with local SQLite database.
+// Now it's used for storing history only.
 type Storage struct {
 	db *sql.DB
 }
 
+// Open tries to open SQLite connection. Returns Storage instance on success
+// or error on failure.
 func Open(dbPath string) (*Storage, error) {
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 		log.Println("Instantiating new database...")
@@ -144,6 +154,8 @@ func (s *Storage) ClearStorage() error {
 	return err
 }
 
+// IsOriginURLAlreadyPresented is legacy method used in past for checking if
+// wallpaper has already downloaded earlier. Now I consider removing this.
 func (s *Storage) IsOriginURLAlreadyPresented(originUrl string) (bool, error) {
 	queryFormat := "select * from history where origin_url = \"%s\""
 	query := fmt.Sprintf(queryFormat, originUrl)

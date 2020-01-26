@@ -10,6 +10,9 @@ import (
 	"time"
 )
 
+// Scheduler is singleton (yes -_-) object that
+// controls main program loop. Every period
+// it triggers changeOp().
 type Scheduler struct {
 	config  *config.Config
 	period  *time.Ticker
@@ -28,6 +31,8 @@ func NewScheduler(
 	}
 }
 
+// Start initializes Scheduler and starts provide-change loop.
+// This method should be used only once.
 func (s *Scheduler) Start(config *config.Config) error {
 	s.config = config
 
@@ -71,6 +76,8 @@ func (s *Scheduler) init() error {
 	return nil
 }
 
+// changeOp asks provider to provider image then asks changer to
+// change wallpaper.
 func (s *Scheduler) changeOp() error {
 	log.Println("Change desktop wallpaper operation triggered")
 	wallpaper := (*s.fetcher).Provide()

@@ -6,13 +6,16 @@ import (
 	"github.com/ildarkarymoff/blider/config"
 	"github.com/ildarkarymoff/blider/provider"
 	"github.com/ildarkarymoff/blider/storage"
+	"io/ioutil"
 	"log"
+	"os"
+	"path"
 	"time"
 )
 
 // Scheduler is singleton (yes -_-) object that
-// controls main program loop. Every period
-// it triggers changeOp().
+// controls main program loop. Every period it
+// triggers changeOp().
 type Scheduler struct {
 	config  *config.Config
 	period  *time.Ticker
@@ -81,6 +84,22 @@ func (s *Scheduler) init() error {
 func (s *Scheduler) changeOp() error {
 	log.Println("Change desktop wallpaper operation triggered")
 	wallpaper := (*s.fetcher).Provide()
+
+	log.Println("Saving image to database...")
+	id, err := s.storage.AddWallpaper(wallpaper)
+	if err != nil {
+		log.Printf("[Save wallpaper to database] %v", err)
+	}
+
+	wallpaper.ID = id
+
+	if wallpaper.ID == 0 {
+		return nil
+	}
+
+	log.Println("Saving image to local storage...")
+	s.saveImage(wallpaper.Filename, wallpaper.ImgBuffer)
+
 	if err := (*s.changer).Change(wallpaper); err != nil {
 		return err
 	}
@@ -94,4 +113,24 @@ func (s *Scheduler) changeOp() error {
 
 	log.Printf("Paused for %s", s.config.Period)
 	return nil
+}
+
+func (s *Scheduler) saveImage(filename string, image []byte) {
+	if _, err := os.Stat(s.config.LocalStoragePath); os.IsNotExist(err) {
+		if err := os.MkdirAll(s.config.LocalStoragePath, os.ModePerm); err != nil {
+			log.Fatalf(
+				"Failed to create images directory %s: %v",
+				s.config.LocalStoragePath,
+				err,
+			)
+		}
+	}
+
+	filepath := path.Join(s.config.LocalStoragePath, filename)
+	if err := ioutil.WriteFile(filepath, image, os.ModePerm); err != nil {
+		log.Fatalf("Failed to write image to %s: %v", filepath, err)
+	}
+
+	log.Printf("Saved image to %s", filepath)
+
 }

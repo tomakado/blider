@@ -11,7 +11,6 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"os"
 	"path"
 	"strings"
 	"time"
@@ -21,8 +20,6 @@ const (
 	entryPointURL     = "http://simpledesktops.com/browse/%d"
 	simpleDesktopsURL = "http://simpledesktops.com"
 )
-
-// TODO move saving to database logic to upper level.
 
 // SimpleDesktopsProvider is provider of images taken
 // from http://simpledesktops.com
@@ -41,11 +38,11 @@ func (f *SimpleDesktopsProvider) Init(config *config.Config, storage *storage.St
 
 // Provide tries to parse and download images from http://simpledesktops.com.
 func (f *SimpleDesktopsProvider) Provide() *storage.Wallpaper {
-	log.Printf("Fetching from %s", simpleDesktopsURL)
+	log.Printf("Fetching from %s...", simpleDesktopsURL)
 
 	var wallpaper *storage.Wallpaper
 
-	for wallpaper == nil || wallpaper.ID == 0 {
+	for wallpaper == nil {
 		rand.Seed(time.Now().UnixNano())
 		pageNum := rand.Intn(f.maxFetchPages-1) + 1
 		url := fmt.Sprintf(entryPointURL, pageNum)
@@ -106,33 +103,35 @@ func (f *SimpleDesktopsProvider) tryToPickFrom(url string) *storage.Wallpaper {
 			Find(".desktops").
 			Find(".edge").
 			Each(func(i int, selection *goquery.Selection) {
-				if i == desktopIndex {
-					log.Printf("Parsing HTML element #%d...", i+1)
-					wallpaperLink := selection.
-						Find(".desktop").
-						Find("a")
-
-					pageUrl, pageUrlExists = wallpaperLink.Attr("href")
-					title = selection.
-						Find(".desktop").
-						Find("h2").
-						Text()
-
-					authorLink := selection.
-						Find(".desktop").
-						Find(".creator").
-						Find("a")
-
-					author = strings.TrimSpace(authorLink.Text())
-					if len(author) == 0 {
-						author = "Unknown"
-					}
-					authorUrl, _ = authorLink.Attr("href")
+				if i != desktopIndex {
+					return
 				}
+
+				log.Printf("Parsing HTML element #%d...", i+1)
+				wallpaperLink := selection.
+					Find(".desktop").
+					Find("a")
+
+				pageUrl, pageUrlExists = wallpaperLink.Attr("href")
+				title = selection.
+					Find(".desktop").
+					Find("h2").
+					Text()
+
+				authorLink := selection.
+					Find(".desktop").
+					Find(".creator").
+					Find("a")
+
+				author = strings.TrimSpace(authorLink.Text())
+				if len(author) == 0 {
+					author = "Unknown"
+				}
+				authorUrl, _ = authorLink.Attr("href")
 			})
 
 		if !pageUrlExists {
-			log.Printf("Failed to find link wallpaper page on page %s", pageUrl)
+			log.Printf("Failed to find link wallpaper page on page %s", url)
 			return &storage.Wallpaper{}
 		}
 
@@ -151,16 +150,9 @@ func (f *SimpleDesktopsProvider) tryToPickFrom(url string) *storage.Wallpaper {
 			Title:          title,
 			Author:         author,
 			AuthorURL:      authorUrl,
+			ImgBuffer:      img,
 		}
 
-		id, err := f.storage.AddWallpaper(wallpaper)
-		if err != nil {
-			log.Printf("[Save wallpaper to database] %v", err)
-			return &storage.Wallpaper{}
-		}
-
-		f.saveImage(filename, img)
-		wallpaper.ID = id
 		selectedWallpaper = wallpaper
 	}
 
@@ -218,25 +210,12 @@ func downloadImageToBuffer(url string) (string, []byte, error) {
 		return "", []byte{}, err
 	}
 
+	imgSize := float32(len(img))
+
+	log.Printf(
+		"Downloaded '%s' / %.2f KB",
+		filename,
+		imgSize/1024,
+	)
 	return filename, img, nil
-}
-
-func (f *SimpleDesktopsProvider) saveImage(filename string, image []byte) {
-	if _, err := os.Stat(f.config.LocalStoragePath); os.IsNotExist(err) {
-		if err := os.MkdirAll(f.config.LocalStoragePath, os.ModePerm); err != nil {
-			log.Fatalf(
-				"Failed to create images directory %s: %v",
-				f.config.LocalStoragePath,
-				err,
-			)
-		}
-	}
-
-	filepath := path.Join(f.config.LocalStoragePath, filename)
-	if err := ioutil.WriteFile(filepath, image, os.ModePerm); err != nil {
-		log.Fatalf("Failed to write image to %s: %v", filepath, err)
-	}
-
-	log.Printf("Saved image to %s", filepath)
-
 }

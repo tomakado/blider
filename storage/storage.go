@@ -23,6 +23,8 @@ type Wallpaper struct {
 	Author string
 	// AuthorURL is author's homepage address (optional).
 	AuthorURL string
+	// ImgBuffer contains image bytes taken from provider.
+	ImgBuffer []byte
 }
 
 // Storage allows other program modules to make operations with local SQLite database.

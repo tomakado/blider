@@ -18,9 +18,14 @@ import (
 )
 
 const (
-	entryPointURL = "http://simpledesktops.com/browse/%d"
+	entryPointURL     = "http://simpledesktops.com/browse/%d"
+	simpleDesktopsURL = "http://simpledesktops.com"
 )
 
+// TODO move saving to database logic to upper level.
+
+// SimpleDesktopsProvider is provider of images taken
+// from http://simpledesktops.com
 type SimpleDesktopsProvider struct {
 	config        *config.Config
 	storage       *storage.Storage
@@ -36,7 +41,7 @@ func (f *SimpleDesktopsProvider) Init(config *config.Config, storage *storage.St
 
 // Provide tries to parse and download images from http://simpledesktops.com.
 func (f *SimpleDesktopsProvider) Provide() *storage.Wallpaper {
-	log.Println("Fetching from http://simpledesktops.com...")
+	log.Printf("Fetching from %s", simpleDesktopsURL)
 
 	var wallpaper *storage.Wallpaper
 
@@ -131,7 +136,7 @@ func (f *SimpleDesktopsProvider) tryToPickFrom(url string) *storage.Wallpaper {
 			return &storage.Wallpaper{}
 		}
 
-		pageUrl = fmt.Sprintf("http://simpledesktops.com%s", pageUrl)
+		pageUrl = fmt.Sprintf("%s%s", simpleDesktopsURL, pageUrl)
 
 		filename, img, err := pullWallpaperFromPage(pageUrl)
 		if err != nil {
@@ -181,7 +186,7 @@ func pullWallpaperFromPage(url string) (string, []byte, error) {
 	if !ok {
 		return "", []byte{}, errors.New("failed to extract image url")
 	}
-	imgURL = fmt.Sprintf("http://simpledesktops.com%s", imgURL)
+	imgURL = fmt.Sprintf("%s%s", simpleDesktopsURL, imgURL)
 	log.Printf("Image URL: %s", imgURL)
 
 	filename, img, err := downloadImageToBuffer(imgURL)

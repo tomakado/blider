@@ -3,7 +3,7 @@ package change
 import (
 	"bytes"
 	"fmt"
-	config2 "github.com/ildarkarymoff/blider/config"
+	"github.com/ildarkarymoff/blider/config"
 	"github.com/ildarkarymoff/blider/storage"
 	"log"
 	"os/exec"
@@ -12,19 +12,8 @@ import (
 	"syscall"
 )
 
-type KDEChanger struct {
-	config *config2.Config
-}
-
-func NewKDEChanger(config *config2.Config) *KDEChanger {
-	return &KDEChanger{
-		config: config,
-	}
-}
-
-func (c KDEChanger) Change(wallpaper *storage.Wallpaper) error {
-	filepath := path.Join(c.config.LocalStoragePath, wallpaper.Filename)
-	script := fmt.Sprintf(`var allDesktops = desktops();
+const (
+	scriptFmt = `var allDesktops = desktops();
 		print (allDesktops);
 		for (i=0;i<allDesktops.length;i++) {{
 			d = allDesktops[i];
@@ -33,9 +22,25 @@ func (c KDEChanger) Change(wallpaper *storage.Wallpaper) error {
 										 "org.kde.image",
 										 "General");
 			d.writeConfig("Image", "file://%s")
-		}}
-	`, filepath,
-	)
+		}}`
+)
+
+// KDEChanger is IChanger implementation for KDE Plasma Desktop Environment.
+type KDEChanger struct {
+	config *config.Config
+}
+
+func NewKDEChanger(config *config.Config) *KDEChanger {
+	return &KDEChanger{
+		config: config,
+	}
+}
+
+// Change calls special Plasma script to change desktop wallpaper providing
+// path to image using information from config and storage.Wallpaper instance.
+func (c KDEChanger) Change(wallpaper *storage.Wallpaper) error {
+	filepath := path.Join(c.config.LocalStoragePath, wallpaper.Filename)
+	script := fmt.Sprintf(scriptFmt, filepath)
 	cmd := exec.Command(
 		"qdbus",
 		"org.kde.plasmashell",

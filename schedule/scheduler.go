@@ -85,6 +85,12 @@ func (s *Scheduler) changeOp() error {
 	log.Println("Change desktop wallpaper operation triggered")
 	wallpaper := (*s.fetcher).Provide()
 
+	// If image obtaining failed we don't want to wait another
+	// period, but should try to obtain again.
+	if len(wallpaper.ImgBuffer) == 0 {
+		return s.changeOp()
+	}
+
 	log.Println("Saving image to database...")
 	id, err := s.storage.AddWallpaper(wallpaper)
 	if err != nil {
@@ -92,10 +98,6 @@ func (s *Scheduler) changeOp() error {
 	}
 
 	wallpaper.ID = id
-
-	if wallpaper.ID == 0 {
-		return nil
-	}
 
 	log.Println("Saving image to local storage...")
 	s.saveImage(wallpaper.Filename, wallpaper.ImgBuffer)

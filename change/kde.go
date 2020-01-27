@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/ildarkarymoff/blider/config"
-	"github.com/ildarkarymoff/blider/storage"
+	"github.com/ildarkarymoff/blider/repository"
 	"log"
 	"os/exec"
 	"path"
@@ -37,8 +37,8 @@ func NewKDEChanger(config *config.Config) *KDEChanger {
 }
 
 // Change calls special Plasma script to change desktop wallpaper providing
-// path to image using information from config and storage.Wallpaper instance.
-func (c KDEChanger) Change(wallpaper *storage.Wallpaper) error {
+// path to image using information from config and repository.Wallpaper instance.
+func (c KDEChanger) Change(wallpaper *repository.Wallpaper) error {
 	filepath := path.Join(c.config.LocalStoragePath, wallpaper.Filename)
 	script := fmt.Sprintf(scriptFmt, filepath)
 	cmd := exec.Command(

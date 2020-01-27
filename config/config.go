@@ -13,8 +13,10 @@ import (
 type Config struct {
 	// Period is a time interval between fetch & change iterations.
 	Period Period `json:"period,omitempty"`
-	// LocalStoragePath is path to local directory used as images storage.
+	// LocalStoragePath is path to local directory used as images repository.
 	LocalStoragePath string `json:"local_storage_path"`
+	// LocalStorageLimit is maximum amount of locally stored images.
+	LocalStorageLimit int `json:"local_storage_limit"`
 	// DBPath is path to SQLite databse.
 	DBPath string `json:"db_path"`
 	// MaxFetchPages is maximum number of pages to look at.
@@ -54,6 +56,10 @@ func FromFile(filename string) (*Config, error) {
 
 	if c.MaxFetchPages <= 0 {
 		c.MaxFetchPages = 10
+	}
+
+	if c.LocalStorageLimit < 0 {
+		c.LocalStorageLimit = 100
 	}
 
 	return c, nil

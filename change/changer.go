@@ -1,6 +1,6 @@
 package change
 
-import "github.com/ildarkarymoff/blider/storage"
+import "github.com/ildarkarymoff/blider/repository"
 
 // IChanger is an interface for creating desktop
 // wallpaper changers for different desktop
@@ -8,5 +8,5 @@ import "github.com/ildarkarymoff/blider/storage"
 type IChanger interface {
 	// Change is a main method of each changer.
 	// Returns error only on failure.
-	Change(wallpaper *storage.Wallpaper) error
+	Change(wallpaper *repository.Wallpaper) error
 }

@@ -5,11 +5,9 @@ import (
 	"github.com/ildarkarymoff/blider/change"
 	"github.com/ildarkarymoff/blider/config"
 	"github.com/ildarkarymoff/blider/provider"
+	"github.com/ildarkarymoff/blider/repository"
 	"github.com/ildarkarymoff/blider/storage"
-	"io/ioutil"
 	"log"
-	"os"
-	"path"
 	"time"
 )
 
@@ -17,20 +15,21 @@ import (
 // controls main program loop. Every period it
 // triggers changeOp().
 type Scheduler struct {
-	config  *config.Config
-	period  *time.Ticker
-	fetcher *provider.IProvider
-	changer *change.IChanger
-	storage *storage.Storage
+	config     *config.Config
+	period     *time.Ticker
+	provider   *provider.IProvider
+	changer    *change.IChanger
+	repository *repository.Repository
+	storage    *storage.Storage
 }
 
 func NewScheduler(
-	fetcher provider.IProvider,
+	provider provider.IProvider,
 	changer change.IChanger,
 ) *Scheduler {
 	return &Scheduler{
-		fetcher: &fetcher,
-		changer: &changer,
+		provider: &provider,
+		changer:  &changer,
 	}
 }
 
@@ -43,7 +42,7 @@ func (s *Scheduler) Start(config *config.Config) error {
 		return fmt.Errorf("[init] %v", err)
 	}
 
-	(*s.fetcher).Init(s.config, s.storage)
+	(*s.provider).Init(s.config, s.repository)
 
 	if err := s.changeOp(); err != nil {
 		return fmt.Errorf("[changeOp 1st time] %v", err)
@@ -68,12 +67,18 @@ func (s *Scheduler) init() error {
 
 	s.period = time.NewTicker(period)
 
-	log.Println("Opening storage...")
-	st, err := storage.Open(s.config.DBPath)
+	log.Println("Opening repository...")
+	rep, err := repository.Open(s.config.DBPath)
 	if err != nil {
-		return nil
+		return err
 	}
+	s.repository = rep
 
+	log.Println("Opening storage...")
+	st, err := storage.Open(s.config, s.repository)
+	if err != nil {
+		return err
+	}
 	s.storage = st
 
 	return nil
@@ -83,7 +88,7 @@ func (s *Scheduler) init() error {
 // change wallpaper.
 func (s *Scheduler) changeOp() error {
 	log.Println("Change desktop wallpaper operation triggered")
-	wallpaper := (*s.fetcher).Provide()
+	wallpaper := (*s.provider).Provide()
 
 	// If image obtaining failed we don't want to wait another
 	// period, but should try to obtain again.
@@ -92,15 +97,18 @@ func (s *Scheduler) changeOp() error {
 	}
 
 	log.Println("Saving image to database...")
-	id, err := s.storage.AddWallpaper(wallpaper)
+	id, err := s.repository.AddWallpaper(wallpaper)
 	if err != nil {
 		log.Printf("[Save wallpaper to database] %v", err)
 	}
 
 	wallpaper.ID = id
 
-	log.Println("Saving image to local storage...")
-	s.saveImage(wallpaper.Filename, wallpaper.ImgBuffer)
+	log.Println("Saving image to local repository...")
+	if err := s.storage.Save(wallpaper.Filename, wallpaper.ImgBuffer); err != nil {
+		return err
+	}
+	//s.saveImage(wallpaper.Filename, wallpaper.ImgBuffer)
 
 	if err := (*s.changer).Change(wallpaper); err != nil {
 		return err
@@ -113,26 +121,73 @@ func (s *Scheduler) changeOp() error {
 		wallpaper.OriginURL,
 	)
 
+	if s.config.LocalStorageLimit != 0 {
+		if err := s.storage.CleanUp(); err != nil {
+			return fmt.Errorf("[storage.CleanUp] %v", err)
+		}
+	}
+
 	log.Printf("Paused for %s", s.config.Period)
 	return nil
 }
 
-func (s *Scheduler) saveImage(filename string, image []byte) {
-	if _, err := os.Stat(s.config.LocalStoragePath); os.IsNotExist(err) {
-		if err := os.MkdirAll(s.config.LocalStoragePath, os.ModePerm); err != nil {
-			log.Fatalf(
-				"Failed to create images directory %s: %v",
-				s.config.LocalStoragePath,
-				err,
-			)
-		}
-	}
-
-	filepath := path.Join(s.config.LocalStoragePath, filename)
-	if err := ioutil.WriteFile(filepath, image, os.ModePerm); err != nil {
-		log.Fatalf("Failed to write image to %s: %v", filepath, err)
-	}
-
-	log.Printf("Saved image to %s", filepath)
-
-}
+//func (s *Scheduler) saveImage(filename string, image []byte) {
+//	if _, err := os.Stat(s.config.LocalStoragePath); os.IsNotExist(err) {
+//		if err := os.MkdirAll(s.config.LocalStoragePath, os.ModePerm); err != nil {
+//			log.Fatalf(
+//				"Failed to create images directory %s: %v",
+//				s.config.LocalStoragePath,
+//				err,
+//			)
+//		}
+//	}
+//
+//	wpPath := path.Join(s.config.LocalStoragePath, filename)
+//	if err := ioutil.WriteFile(wpPath, image, os.ModePerm); err != nil {
+//		log.Fatalf("Failed to write image to %s: %v", wpPath, err)
+//	}
+//
+//	log.Printf("Saved image to %s", wpPath)
+//
+//}
+//
+//func (s *Scheduler) cleanupLocalStorage() error {
+//	log.Println("Checking local repository...")
+//	files, err := ioutil.ReadDir(s.config.LocalStoragePath)
+//	if err != nil {
+//		return err
+//	}
+//
+//	if len(files) > s.config.LocalStorageLimit {
+//		log.Println("Local repository limit exceeded. Cleaning up...")
+//		wallpapers, err := s.repository.GetWallpapers()
+//		if err != nil {
+//			return err
+//		}
+//
+//		if len(wallpapers) < s.config.LocalStorageLimit {
+//			return fmt.Errorf(
+//				"local repository size (%d) and wallpapers count (%d) in DB mismatch",
+//				len(files),
+//				len(wallpapers),
+//			)
+//		}
+//
+//		for i := s.config.LocalStorageLimit + 1; i < len(wallpapers); i++ {
+//			wpPath := filepath.Join(s.config.LocalStoragePath, wallpapers[i].Filename)
+//
+//			stat, err := os.Stat(wpPath)
+//			wpIsNotExist := os.IsNotExist(err)
+//			if wpIsNotExist || stat.IsDir() {
+//				continue
+//			}
+//
+//			log.Printf("Removing '%s'...", wallpapers[i].Filename)
+//			if err := os.Remove(wpPath); err != nil {
+//				return fmt.Errorf("[Remove '%s'] %v", wallpapers[i].Filename, err)
+//			}
+//		}
+//	}
+//
+//	return err
+//}

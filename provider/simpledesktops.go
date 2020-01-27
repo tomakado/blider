@@ -6,7 +6,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/google/uuid"
 	"github.com/ildarkarymoff/blider/config"
-	"github.com/ildarkarymoff/blider/storage"
+	"github.com/ildarkarymoff/blider/repository"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -25,30 +25,30 @@ const (
 // from http://simpledesktops.com
 type SimpleDesktopsProvider struct {
 	config        *config.Config
-	storage       *storage.Storage
+	repository    *repository.Repository
 	maxFetchPages int
 }
 
-func (f *SimpleDesktopsProvider) Init(config *config.Config, storage *storage.Storage) {
+func (p *SimpleDesktopsProvider) Init(config *config.Config, repository *repository.Repository) {
 	log.Println("Initializing SimpleDesktopsProvider...")
-	f.config = config
-	f.storage = storage
-	f.maxFetchPages = f.config.MaxFetchPages
+	p.config = config
+	p.repository = repository
+	p.maxFetchPages = p.config.MaxFetchPages
 }
 
 // Provide tries to parse and download images from http://simpledesktops.com.
-func (f *SimpleDesktopsProvider) Provide() *storage.Wallpaper {
+func (p *SimpleDesktopsProvider) Provide() *repository.Wallpaper {
 	log.Printf("Fetching from %s...", simpleDesktopsURL)
 
-	var wallpaper *storage.Wallpaper
+	var wallpaper *repository.Wallpaper
 
 	for wallpaper == nil {
 		rand.Seed(time.Now().UnixNano())
-		pageNum := rand.Intn(f.maxFetchPages-1) + 1
+		pageNum := rand.Intn(p.maxFetchPages-1) + 1
 		url := fmt.Sprintf(entryPointURL, pageNum)
 		log.Printf("Fetching %s...", url)
 
-		wallpaper = f.tryToPickFrom(url)
+		wallpaper = p.tryToPickFrom(url)
 
 		// Here maxFetchPages is being approximated to real amount
 		// pages on the website on each iteration.
@@ -61,29 +61,29 @@ func (f *SimpleDesktopsProvider) Provide() *storage.Wallpaper {
 		// look at pages 81, 82, 83, etc. Also we (hope that we)
 		// can't get 404 error on page #35 if we have 50 pages
 		// on website at all.
-		if wallpaper == nil && f.maxFetchPages > pageNum {
-			f.maxFetchPages = pageNum - 1
+		if wallpaper == nil && p.maxFetchPages > pageNum {
+			p.maxFetchPages = pageNum - 1
 		}
 	}
 
 	return wallpaper
 }
 
-func (f *SimpleDesktopsProvider) tryToPickFrom(url string) *storage.Wallpaper {
+func (p *SimpleDesktopsProvider) tryToPickFrom(url string) *repository.Wallpaper {
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Printf("[Provide %s] %v", url, err)
-		return &storage.Wallpaper{}
+		return &repository.Wallpaper{}
 	}
 	defer resp.Body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
 		log.Printf("[Read document at %s] %v", url, err)
-		return &storage.Wallpaper{}
+		return &repository.Wallpaper{}
 	}
 
-	var selectedWallpaper *storage.Wallpaper
+	var selectedWallpaper *repository.Wallpaper
 
 	desktops := doc.
 		Find(".desktops").
@@ -132,7 +132,7 @@ func (f *SimpleDesktopsProvider) tryToPickFrom(url string) *storage.Wallpaper {
 
 		if !pageUrlExists {
 			log.Printf("Failed to find link wallpaper page on page %s", url)
-			return &storage.Wallpaper{}
+			return &repository.Wallpaper{}
 		}
 
 		pageUrl = fmt.Sprintf("%s%s", simpleDesktopsURL, pageUrl)
@@ -140,10 +140,10 @@ func (f *SimpleDesktopsProvider) tryToPickFrom(url string) *storage.Wallpaper {
 		filename, img, err := pullWallpaperFromPage(pageUrl)
 		if err != nil {
 			log.Printf("[Provide wallpaper from %s] %v", pageUrl, err)
-			return &storage.Wallpaper{}
+			return &repository.Wallpaper{}
 		}
 
-		wallpaper := &storage.Wallpaper{
+		wallpaper := &repository.Wallpaper{
 			OriginURL:      pageUrl,
 			Filename:       filename,
 			FetchTimestamp: uint(time.Now().Unix()),

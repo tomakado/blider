@@ -11,11 +11,14 @@ import (
 	"path/filepath"
 )
 
+// Storage is object for managing local images storage.
 type Storage struct {
 	config     *config.Config
 	repository *repository.Repository
 }
 
+// Open checks if local storage directory exists. If not it creates directory
+// corresponding to config.LocalStoragePath.
 func Open(config *config.Config, repository *repository.Repository) (*Storage, error) {
 	if _, err := os.Stat(config.LocalStoragePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(config.LocalStoragePath, os.ModePerm); err != nil {
@@ -34,6 +37,8 @@ func Open(config *config.Config, repository *repository.Repository) (*Storage, e
 	}, nil
 }
 
+// Save tries to write images bytes to specified file.
+// Returns error on failure.
 func (s *Storage) Save(filename string, image []byte) error {
 	wpPath := path.Join(s.config.LocalStoragePath, filename)
 	if err := ioutil.WriteFile(wpPath, image, os.ModePerm); err != nil {
@@ -44,6 +49,10 @@ func (s *Storage) Save(filename string, image []byte) error {
 	return nil
 }
 
+// CleanUp makes locally saved images amount to be limited
+// to LocalStorageLimit parameter in configuration.
+// CleanUp selects images for deleting from disk based on
+// information from SQLite database.
 func (s *Storage) CleanUp() error {
 	log.Println("Checking local repository...")
 	files, err := ioutil.ReadDir(s.config.LocalStoragePath)

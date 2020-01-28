@@ -84,10 +84,12 @@ func createDatabase(dbPath string) error {
 	return nil
 }
 
+// Close ...
 func (r *Repository) Close() error {
 	return r.db.Close()
 }
 
+// AddWallpaper ...
 func (r *Repository) AddWallpaper(wallpaper *Wallpaper) (int64, error) {
 	queryFormat := `insert into history (
 						origin_url,
@@ -120,6 +122,7 @@ func (r *Repository) AddWallpaper(wallpaper *Wallpaper) (int64, error) {
 	return id, nil
 }
 
+// GetWallpaper ...
 func (r *Repository) GetWallpaper(id int) (*Wallpaper, error) {
 	queryFormat := "select * from history where id = %d"
 	query := fmt.Sprintf(queryFormat, id)
@@ -151,6 +154,7 @@ func (r *Repository) GetWallpaper(id int) (*Wallpaper, error) {
 	return wallpapers[0], nil
 }
 
+// ClearHistory ...
 func (r *Repository) ClearHistory() error {
 	//noinspection SqlWithoutWhere
 	_, err := r.db.Exec("delete from history")
@@ -188,6 +192,7 @@ func (r *Repository) IsOriginURLAlreadyPresented(originUrl string) (bool, error)
 	return len(wallpapers) != 0, nil
 }
 
+// GetWallpapers ...
 func (r *Repository) GetWallpapers() ([]*Wallpaper, error) {
 	query := "select * from history"
 

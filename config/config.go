@@ -47,6 +47,7 @@ func FromFile(filename string) (*Config, error) {
 	return c, nil
 }
 
+// NewDefault ...
 func NewDefault() *Config {
 	c := &Config{}
 	c.Fill()

@@ -40,7 +40,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 
 	_ = os.Remove(dbPath)
-	_ = os.Remove(localStoragePath)
+	_ = os.RemoveAll(localStoragePath)
 }
 
 func TestOpen(t *testing.T) {
@@ -54,4 +54,18 @@ func TestOpen(t *testing.T) {
 	storage, err = Open(wrongCfg, rep)
 	assert.Error(t, err)
 	assert.Empty(t, storage)
+}
+
+func TestStorage_Save(t *testing.T) {
+	const testFilename = "test.png"
+
+	storage, err := Open(cfg, rep)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, storage)
+
+	err = storage.Save(testFilename, []byte{})
+	assert.NoError(t, err)
+
+	// Negative test case is not provided here
+	// because test for Storage.Open() covers it.
 }

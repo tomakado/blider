@@ -45,6 +45,11 @@ func Open(dbPath string) (*Repository, error) {
 		log.Println("Database created")
 	}
 
+	_, err := os.OpenFile(dbPath, os.O_RDONLY|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
+
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, err

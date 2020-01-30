@@ -47,23 +47,23 @@ func TestMain(m *testing.M) {
 
 func TestOpen(t *testing.T) {
 	storage, err := Open(cfg, rep)
-	assert.NoError(t, err)
 	assert.NotEmpty(t, storage)
+	assert.NoError(t, err)
 
 	wrongCfg := config.NewDefault()
 	wrongCfg.LocalStoragePath = "/root/.blider"
 
 	storage, err = Open(wrongCfg, rep)
-	assert.Error(t, err)
 	assert.Empty(t, storage)
+	assert.Error(t, err)
 }
 
 func TestStorage_Save(t *testing.T) {
 	const testFilename = "test.png"
 
 	storage, err := Open(cfg, rep)
-	assert.NoError(t, err)
 	assert.NotEmpty(t, storage)
+	assert.NoError(t, err)
 
 	assert.NoError(t, storage.Save(testFilename, []byte{}))
 
@@ -75,8 +75,8 @@ func TestStorage_CleanUp(t *testing.T) {
 	const testFilenameFmt = "test_%d.png"
 
 	storage, err := Open(cfg, rep)
-	assert.NoError(t, err)
 	assert.NotEmpty(t, storage)
+	assert.NoError(t, err)
 
 	filename := fmt.Sprintf(testFilenameFmt, -1)
 

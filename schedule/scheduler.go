@@ -73,6 +73,7 @@ func (s *Scheduler) init() error {
 		return err
 	}
 	s.repository = rep
+	defer s.repository.Close()
 
 	log.Println("Opening storage...")
 	st, err := storage.Open(s.config, s.repository)

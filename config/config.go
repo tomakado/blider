@@ -42,6 +42,18 @@ func FromFile(filename string) (*Config, error) {
 		return nil, err
 	}
 
+	c.Fill()
+
+	return c, nil
+}
+
+func NewDefault() *Config {
+	c := &Config{}
+	c.Fill()
+	return c
+}
+
+func (c *Config) Fill() {
 	homeDir, _ := os.UserHomeDir()
 
 	c.LocalStoragePath = strings.TrimSpace(c.LocalStoragePath)
@@ -61,8 +73,6 @@ func FromFile(filename string) (*Config, error) {
 	if c.LocalStorageLimit < 0 {
 		c.LocalStorageLimit = 100
 	}
-
-	return c, nil
 }
 
 // Period is a string in format "<integers>(s|m|h)"

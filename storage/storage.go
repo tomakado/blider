@@ -31,6 +31,13 @@ func Open(config *config.Config, repository *repository.Repository) (*Storage, e
 		}
 	}
 
+	if _, err := os.Open(config.LocalStoragePath); os.IsPermission(err) {
+		return &Storage{}, fmt.Errorf(
+			"failed to open images directory %s: %v",
+			config.LocalStoragePath, err,
+		)
+	}
+
 	return &Storage{
 		config:     config,
 		repository: repository,

@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 var (
@@ -27,8 +28,9 @@ func TestMain(m *testing.M) {
 	localStoragePath := path.Join(wd, ".blider_test")
 
 	cfg = &config.Config{
-		DBPath:           dbPath,
-		LocalStoragePath: localStoragePath,
+		DBPath:            dbPath,
+		LocalStoragePath:  localStoragePath,
+		LocalStorageLimit: 5,
 	}
 
 	rep, err = repository.Open(dbPath)
@@ -63,9 +65,41 @@ func TestStorage_Save(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, storage)
 
-	err = storage.Save(testFilename, []byte{})
-	assert.NoError(t, err)
+	assert.NoError(t, storage.Save(testFilename, []byte{}))
 
 	// Negative test case is not provided here
 	// because test for Storage.Open() covers it.
+}
+
+func TestStorage_CleanUp(t *testing.T) {
+	const testFilenameFmt = "test_%d.png"
+
+	storage, err := Open(cfg, rep)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, storage)
+
+	filename := fmt.Sprintf(testFilenameFmt, -1)
+
+	wallpaper := &repository.Wallpaper{
+		Filename:       filename,
+		FetchTimestamp: uint(time.Now().Unix()),
+		Title:          "Test",
+		Author:         "go test",
+		AuthorURL:      "https://golang.org",
+		ImgBuffer:      []byte{},
+	}
+
+	_, err = rep.AddWallpaper(wallpaper)
+	assert.NoError(t, err)
+
+	assert.NoError(t, storage.Save(filename, []byte{}))
+
+	assert.NoError(t, storage.CleanUp())
+
+	for i := 0; i < 10; i++ {
+		filename = fmt.Sprintf(testFilenameFmt, i)
+		assert.NoError(t, storage.Save(filename, []byte{}))
+	}
+
+	assert.Error(t, storage.CleanUp())
 }

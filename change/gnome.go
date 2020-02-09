@@ -12,41 +12,25 @@ import (
 	"syscall"
 )
 
-const (
-	scriptFmt = `var allDesktops = desktops();
-		print (allDesktops);
-		for (i=0;i<allDesktops.length;i++) {{
-			d = allDesktops[i];
-			d.wallpaperPlugin = "org.kde.image";
-			d.currentConfigGroup = Array("Wallpaper",
-										 "org.kde.image",
-										 "General");
-			d.writeConfig("Image", "file://%s")
-		}}`
-)
-
-// KDEChanger is IChanger implementation for KDE Plasma Desktop Environment.
-type KDEChanger struct {
+type GnomeChanger struct {
 	config *config.Config
 }
 
-func NewKDEChanger(config *config.Config) *KDEChanger {
-	return &KDEChanger{
+func NewGnomeChanger(config *config.Config) *GnomeChanger {
+	return &GnomeChanger{
 		config: config,
 	}
 }
 
-// Change calls special Plasma script to change desktop wallpaper providing
-// path to image using information from config and repository.Wallpaper instance.
-func (c KDEChanger) Change(wallpaper *repository.Wallpaper) error {
+func (c GnomeChanger) Change(wallpaper *repository.Wallpaper) error {
 	imgPath := filepath.Join(c.config.LocalStoragePath, wallpaper.Filename)
-	script := fmt.Sprintf(scriptFmt, imgPath)
+	// gsettings set org.gnome.desktop.background picture-uri file:///$PATH_TO_FILE
 	cmd := exec.Command(
-		"qdbus",
-		"org.kde.plasmashell",
-		"/PlasmaShell",
-		"evaluateScript",
-		script,
+		"gsettings",
+		"set",
+		"org.gnome.desktop.background",
+		"picture-uri",
+		fmt.Sprintf("file:///%s", imgPath),
 	)
 
 	var output bytes.Buffer

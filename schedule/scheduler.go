@@ -74,7 +74,6 @@ func (s *Scheduler) init() error {
 		return err
 	}
 	s.repository = rep
-	//defer s.repository.Close()
 
 	log.Println("Opening storage...")
 	st, err := storage.Open(s.config, s.repository)
@@ -136,64 +135,3 @@ func (s *Scheduler) changeOp() error {
 	log.Printf("Paused for %s", s.config.Period)
 	return nil
 }
-
-//func (s *Scheduler) saveImage(filename string, image []byte) {
-//	if _, err := os.Stat(s.config.LocalStoragePath); os.IsNotExist(err) {
-//		if err := os.MkdirAll(s.config.LocalStoragePath, os.ModePerm); err != nil {
-//			log.Fatalf(
-//				"Failed to create images directory %s: %v",
-//				s.config.LocalStoragePath,
-//				err,
-//			)
-//		}
-//	}
-//
-//	wpPath := path.Join(s.config.LocalStoragePath, filename)
-//	if err := ioutil.WriteFile(wpPath, image, os.ModePerm); err != nil {
-//		log.Fatalf("Failed to write image to %s: %v", wpPath, err)
-//	}
-//
-//	log.Printf("Saved image to %s", wpPath)
-//
-//}
-//
-//func (s *Scheduler) cleanupLocalStorage() error {
-//	log.Println("Checking local repository...")
-//	files, err := ioutil.ReadDir(s.config.LocalStoragePath)
-//	if err != nil {
-//		return err
-//	}
-//
-//	if len(files) > s.config.LocalStorageLimit {
-//		log.Println("Local repository limit exceeded. Cleaning up...")
-//		wallpapers, err := s.repository.GetWallpapers()
-//		if err != nil {
-//			return err
-//		}
-//
-//		if len(wallpapers) < s.config.LocalStorageLimit {
-//			return fmt.Errorf(
-//				"local repository size (%d) and wallpapers count (%d) in DB mismatch",
-//				len(files),
-//				len(wallpapers),
-//			)
-//		}
-//
-//		for i := s.config.LocalStorageLimit + 1; i < len(wallpapers); i++ {
-//			wpPath := filepath.Join(s.config.LocalStoragePath, wallpapers[i].Filename)
-//
-//			stat, err := os.Stat(wpPath)
-//			wpIsNotExist := os.IsNotExist(err)
-//			if wpIsNotExist || stat.IsDir() {
-//				continue
-//			}
-//
-//			log.Printf("Removing '%s'...", wallpapers[i].Filename)
-//			if err := os.Remove(wpPath); err != nil {
-//				return fmt.Errorf("[Remove '%s'] %v", wallpapers[i].Filename, err)
-//			}
-//		}
-//	}
-//
-//	return err
-//}

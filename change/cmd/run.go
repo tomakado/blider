@@ -1,38 +1,14 @@
-package change
+package cmd
 
 import (
 	"bytes"
-	"fmt"
-	"github.com/ildarkarymoff/blider/config"
-	"github.com/ildarkarymoff/blider/repository"
 	"log"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"syscall"
 )
 
-type GnomeChanger struct {
-	config *config.Config
-}
-
-func NewGnomeChanger(config *config.Config) *GnomeChanger {
-	return &GnomeChanger{
-		config: config,
-	}
-}
-
-func (c GnomeChanger) Change(wallpaper *repository.Wallpaper) error {
-	imgPath := filepath.Join(c.config.LocalStoragePath, wallpaper.Filename)
-	// gsettings set org.gnome.desktop.background picture-uri file:///$PATH_TO_FILE
-	cmd := exec.Command(
-		"gsettings",
-		"set",
-		"org.gnome.desktop.background",
-		"picture-uri",
-		fmt.Sprintf("file:///%s", imgPath),
-	)
-
+func Run(cmd *exec.Cmd) error {
 	var output bytes.Buffer
 	cmd.Stdout = &output
 

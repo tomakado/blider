@@ -2,7 +2,8 @@ package schedule
 
 import (
 	"fmt"
-	"github.com/ildarkarymoff/blider/change"
+	"github.com/ildarkarymoff/blider/change/cmd"
+	"github.com/ildarkarymoff/blider/change/cmd/builder"
 	"github.com/ildarkarymoff/blider/config"
 	"github.com/ildarkarymoff/blider/provider"
 	"github.com/ildarkarymoff/blider/repository"
@@ -18,18 +19,18 @@ type Scheduler struct {
 	config     *config.Config
 	period     *time.Ticker
 	provider   *provider.IProvider
-	changer    *change.IChanger
+	builder    *builder.ICmdBuilder
 	repository *repository.Repository
 	storage    *storage.Storage
 }
 
 func NewScheduler(
 	provider provider.IProvider,
-	changer change.IChanger,
+	builder *builder.ICmdBuilder,
 ) *Scheduler {
 	return &Scheduler{
 		provider: &provider,
-		changer:  &changer,
+		builder:  builder,
 	}
 }
 
@@ -73,7 +74,7 @@ func (s *Scheduler) init() error {
 		return err
 	}
 	s.repository = rep
-	defer s.repository.Close()
+	//defer s.repository.Close()
 
 	log.Println("Opening storage...")
 	st, err := storage.Open(s.config, s.repository)
@@ -82,10 +83,13 @@ func (s *Scheduler) init() error {
 	}
 	s.storage = st
 
+	log.Println("Initializing builder...")
+	(*s.builder).Init(s.config)
+
 	return nil
 }
 
-// changeOp asks provider to provider image then asks changer to
+// changeOp asks provider to provider image then asks builder to
 // change wallpaper.
 func (s *Scheduler) changeOp() error {
 	log.Println("Change desktop wallpaper operation triggered")
@@ -111,7 +115,8 @@ func (s *Scheduler) changeOp() error {
 	}
 	//s.saveImage(wallpaper.Filename, wallpaper.ImgBuffer)
 
-	if err := (*s.changer).Change(wallpaper); err != nil {
+	command := (*s.builder).Build(wallpaper)
+	if err := cmd.Run(command); err != nil {
 		return err
 	}
 

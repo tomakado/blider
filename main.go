@@ -15,7 +15,11 @@ func main() {
 	homeDir, _ := os.UserHomeDir()
 	defaultConfigPath := path.Join(homeDir, ".blider", "config.json")
 
-	configPath := flag.String("config", defaultConfigPath, "path to JSON file with configuration")
+	configPath := flag.String(
+		"config",
+		defaultConfigPath,
+		"path to JSON file with configuration",
+	)
 
 	flag.Parse()
 
@@ -24,11 +28,14 @@ func main() {
 		log.Fatalf("Failed to load config from %s: %v", *configPath, err)
 	}
 
-	fetcher := &provider.SimpleDesktopsProvider{}
-	changer := change.NewKDEChanger(cfg)
+	wpProvider := &provider.SimpleDesktopsProvider{}
+	cmdBuilder, err := change.ResolveBuilder(cfg)
+	if err != nil {
+		log.Fatalf("Failed to resolve cmdBuilder: %v", err)
+	}
 
-	scheduler := schedule.NewScheduler(fetcher, changer)
+	scheduler := schedule.NewScheduler(wpProvider, cmdBuilder)
 	if err := scheduler.Start(cfg); err != nil {
-		log.Fatalf("Failed to start scheduler: %v", err)
+		log.Fatalf("Scheduler error: %v", err)
 	}
 }

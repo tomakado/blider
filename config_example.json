@@ -1,0 +1,6 @@
+{
+  "period": "10s",
+  "db_path": "blider.sqlite",
+  "max_fetch_pages": 100,
+  "local_storage_limit": 10
+}

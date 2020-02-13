@@ -1,6 +1,6 @@
 module github.com/ildarkarymoff/blider
 
-go 1.13
+go 1.12
 
 require (
 	github.com/PuerkitoBio/goquery v1.5.0

@@ -85,8 +85,9 @@ func (s *Storage) CleanUp() error {
 		)
 	}
 
-	for i := s.config.LocalStorageLimit + 1; i < len(wallpapers); i++ {
-		wpPath := filepath.Join(s.config.LocalStoragePath, wallpapers[i].Filename)
+	for _, wp := range files {
+		wpFilename := wp.Name()
+		wpPath := filepath.Join(s.config.LocalStoragePath, wpFilename)
 
 		stat, err := os.Stat(wpPath)
 		wpIsNotExist := os.IsNotExist(err)
@@ -94,9 +95,9 @@ func (s *Storage) CleanUp() error {
 			continue
 		}
 
-		log.Printf("Removing '%s'...", wallpapers[i].Filename)
+		log.Printf("Removing '%s'...", wpFilename)
 		if err := os.Remove(wpPath); err != nil {
-			return fmt.Errorf("[Remove '%s'] %v", wallpapers[i].Filename, err)
+			return fmt.Errorf("[Remove '%s'] %v", wpFilename, err)
 		}
 	}
 

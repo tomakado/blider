@@ -12,7 +12,7 @@ import (
 
 const (
 	ProviderSimpleDesktops = "simpledesktops"
-	ProviderLocal          = "local"
+	ProviderLocalDirectory = "local_directory"
 )
 
 type Config struct {

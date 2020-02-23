@@ -8,6 +8,11 @@ import (
 	"log"
 	"os"
 	"sort"
+	"strings"
+)
+
+const (
+	WallapperLocal = "local"
 )
 
 type Wallpaper struct {
@@ -26,8 +31,10 @@ type Wallpaper struct {
 	AuthorURL string
 	// ImgBuffer contains image bytes taken from provider.
 	ImgBuffer []byte
-	// ShouldSave specifies should Scheduler save image to local image storage
-	ShouldSave bool
+}
+
+func (w *Wallpaper) IsLocal() bool {
+	return strings.HasPrefix(w.OriginURL, "file://")
 }
 
 // Repository allows other program modules to make operations with local SQLite database.

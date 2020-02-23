@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 )
 
@@ -47,12 +46,11 @@ func Open(config *config.Config, repository *repository.Repository) (*Storage, e
 // Save tries to write images bytes to specified file.
 // Returns error on failure.
 func (s *Storage) Save(filename string, image []byte) error {
-	wpPath := path.Join(s.config.LocalStoragePath, filename)
-	if err := ioutil.WriteFile(wpPath, image, os.ModePerm); err != nil {
-		return fmt.Errorf("failed to write image to %s: %v", wpPath, err)
+	if err := ioutil.WriteFile(filename, image, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to write image to '%s': %v", filename, err)
 	}
 
-	log.Printf("Saved image to %s", wpPath)
+	log.Printf("Saved image to '%s'", filename)
 	return nil
 }
 

@@ -37,7 +37,7 @@ func (p *LocalDirectoryProvider) Provide() *repository.Wallpaper {
 	files, err := ioutil.ReadDir(p.path)
 	if err != nil {
 		fmt.Printf("ERROR [ReadDir(%s)] %v", p.path, err)
-		return nil
+		return &repository.Wallpaper{}
 	}
 
 	images := selectImagesOnly(files)
@@ -46,8 +46,7 @@ func (p *LocalDirectoryProvider) Provide() *repository.Wallpaper {
 			"ERROR [selectImagesOnly] No images found in '%s'",
 			p.path,
 		)
-
-		return nil
+		return &repository.Wallpaper{}
 	}
 
 	imgIndex := rand.Intn(len(images))
@@ -56,11 +55,11 @@ func (p *LocalDirectoryProvider) Provide() *repository.Wallpaper {
 	title := imgFilename[0 : len(imgFilename)-len(filepath.Ext(imgFilename))]
 
 	userName := "Someone"
-	user, err := user.Current()
+	usr, err := user.Current()
 	if err != nil {
-		fmt.Printf("WARN [user.Current] %v", err)
+		fmt.Printf("WARN [usr.Current] %v", err)
 	} else {
-		userName = user.Name
+		userName = usr.Name
 	}
 
 	return &repository.Wallpaper{

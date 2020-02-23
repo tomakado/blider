@@ -9,6 +9,7 @@ import (
 	"github.com/ildarkarymoff/blider/repository"
 	"github.com/ildarkarymoff/blider/storage"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -18,19 +19,19 @@ import (
 type Scheduler struct {
 	config     *config.Config
 	period     *time.Ticker
-	provider   *provider.IProvider
+	providers  *[]provider.IProvider
 	builder    *builder.ICmdBuilder
 	repository *repository.Repository
 	storage    *storage.Storage
 }
 
 func NewScheduler(
-	provider provider.IProvider,
+	providers *[]provider.IProvider,
 	builder *builder.ICmdBuilder,
 ) *Scheduler {
 	return &Scheduler{
-		provider: &provider,
-		builder:  builder,
+		providers: providers,
+		builder:   builder,
 	}
 }
 
@@ -43,7 +44,9 @@ func (s *Scheduler) Start(config *config.Config) error {
 		return fmt.Errorf("[init] %v", err)
 	}
 
-	(*s.provider).Init(s.config, s.repository)
+	for _, p := range *s.providers {
+		p.Init(s.config, s.repository)
+	}
 
 	if err := s.changeOp(); err != nil {
 		return fmt.Errorf("[changeOp 1st time] %v", err)
@@ -92,11 +95,12 @@ func (s *Scheduler) init() error {
 // change wallpaper.
 func (s *Scheduler) changeOp() error {
 	log.Println("Change desktop wallpaper operation triggered")
-	wallpaper := (*s.provider).Provide()
+	providerIndex := rand.Intn(len(*s.providers))
+	wallpaper := (*s.providers)[providerIndex].Provide()
 
 	// If image obtaining failed we don't want to wait another
 	// period, but should try to obtain again.
-	if len(wallpaper.ImgBuffer) == 0 {
+	if len(wallpaper.ImgBuffer) == 0 || !wallpaper.IsLocal() {
 		return s.changeOp()
 	}
 
@@ -108,11 +112,12 @@ func (s *Scheduler) changeOp() error {
 
 	wallpaper.ID = id
 
-	log.Println("Saving image to local repository...")
-	if err := s.storage.Save(wallpaper.Filename, wallpaper.ImgBuffer); err != nil {
-		return err
+	if !wallpaper.IsLocal() {
+		log.Println("Saving image to local repository...")
+		if err := s.storage.Save(wallpaper.Filename, wallpaper.ImgBuffer); err != nil {
+			return err
+		}
 	}
-	//s.saveImage(wallpaper.Filename, wallpaper.ImgBuffer)
 
 	command := (*s.builder).Build(wallpaper)
 	if err := cmd.Run(command); err != nil {

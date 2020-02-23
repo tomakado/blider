@@ -1,6 +1,13 @@
 {
   "period": "10s",
   "db_path": "blider.sqlite",
-  "max_fetch_pages": 100,
-  "local_storage_limit": 10
+  "local_storage_limit": 10,
+  "providers": {
+    "simpledesktops": {
+      "max_fetch_pages": 100
+    },
+    "local_directory": {
+      "path": "/home/ildar/Pictures/Blider/"
+    }
+  }
 }

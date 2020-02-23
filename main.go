@@ -28,14 +28,37 @@ func main() {
 		log.Fatalf("Failed to load config from %s: %v", *configPath, err)
 	}
 
-	wpProvider := &provider.SimpleDesktopsProvider{}
 	cmdBuilder, err := change.ResolveBuilder(cfg)
 	if err != nil {
 		log.Fatalf("Failed to resolve cmdBuilder: %v", err)
 	}
 
-	scheduler := schedule.NewScheduler(wpProvider, cmdBuilder)
+	providers := createProviders(cfg)
+
+	scheduler := schedule.NewScheduler(providers, cmdBuilder)
 	if err := scheduler.Start(cfg); err != nil {
 		log.Fatalf("Scheduler error: %v", err)
 	}
+}
+
+func createProviders(cfg *config.Config) *[]provider.IProvider {
+	var providers []provider.IProvider
+
+	for name, _ := range cfg.Providers {
+		var providerToAppend provider.IProvider
+
+		if name == config.ProviderSimpleDesktops {
+			providerToAppend = &provider.SimpleDesktopsProvider{}
+		} else if name == config.ProviderLocalDirectory {
+			providerToAppend = &provider.LocalDirectoryProvider{}
+		} else {
+			log.Printf("WARN Unknown provider '%s'", name)
+		}
+
+		if providerToAppend != nil {
+			providers = append(providers, providerToAppend)
+		}
+	}
+
+	return &providers
 }

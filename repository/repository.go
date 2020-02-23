@@ -11,10 +11,6 @@ import (
 	"strings"
 )
 
-const (
-	WallapperLocal = "local"
-)
-
 type Wallpaper struct {
 	ID int64
 	// OriginURL is URL of web page where wallpaper has been taken.

@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"net/http"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -159,7 +160,7 @@ func (p *SimpleDesktopsProvider) tryToPickFrom(url string) *repository.Wallpaper
 
 		wallpaper := &repository.Wallpaper{
 			OriginURL:      pageUrl,
-			Filename:       filename,
+			Filename:       filepath.Join(p.config.LocalStoragePath, filename),
 			FetchTimestamp: uint(time.Now().Unix()),
 			Title:          title,
 			Author:         author,

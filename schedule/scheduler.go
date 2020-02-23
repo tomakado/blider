@@ -100,7 +100,7 @@ func (s *Scheduler) changeOp() error {
 
 	// If image obtaining failed we don't want to wait another
 	// period, but should try to obtain again.
-	if len(wallpaper.ImgBuffer) == 0 || !wallpaper.IsLocal() {
+	if len(wallpaper.ImgBuffer) == 0 && !wallpaper.IsLocal() {
 		return s.changeOp()
 	}
 

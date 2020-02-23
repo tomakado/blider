@@ -68,7 +68,7 @@ func resolveDesktopEnvironment(config *config.Config) *builder.ICmdBuilder {
 
 	if !ok {
 		log.Println(
-			"Failed to detect desktop environment. Switching to Gnome...",
+			"Failed to detect desktop environment. Switching to GNOME...",
 		)
 		cmdBuilder = builders[deGnome]
 	}

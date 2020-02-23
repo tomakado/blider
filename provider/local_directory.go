@@ -5,6 +5,7 @@ import (
 	"github.com/ildarkarymoff/blider/config"
 	"github.com/ildarkarymoff/blider/repository"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"os"
 	"os/user"
@@ -36,17 +37,21 @@ func (p *LocalDirectoryProvider) Init(cfg *config.Config, repository *repository
 func (p *LocalDirectoryProvider) Provide() *repository.Wallpaper {
 	files, err := ioutil.ReadDir(p.path)
 	if err != nil {
-		fmt.Printf("ERROR [ReadDir(%s)] %v", p.path, err)
-		return &repository.Wallpaper{}
+		log.Printf("ERROR [ReadDir(%s)] %v", p.path, err)
+		return &repository.Wallpaper{
+			OriginURL: "file:///",
+		}
 	}
 
 	images := selectImagesOnly(files)
 	if len(images) == 0 {
-		fmt.Printf(
+		log.Printf(
 			"ERROR [selectImagesOnly] No images found in '%s'",
 			p.path,
 		)
-		return &repository.Wallpaper{}
+		return &repository.Wallpaper{
+			OriginURL: "file:///",
+		}
 	}
 
 	imgIndex := rand.Intn(len(images))
@@ -57,14 +62,16 @@ func (p *LocalDirectoryProvider) Provide() *repository.Wallpaper {
 	userName := "Someone"
 	usr, err := user.Current()
 	if err != nil {
-		fmt.Printf("WARN [usr.Current] %v", err)
+		log.Printf("WARN [usr.Current] %v", err)
 	} else {
 		userName = usr.Name
 	}
 
+	imgPath := filepath.Join(p.path, imgFilename)
+
 	return &repository.Wallpaper{
-		OriginURL:      fmt.Sprintf("file://%s", selectedImg.Name()),
-		Filename:       selectedImg.Name(),
+		OriginURL:      fmt.Sprintf("file://%s", imgPath),
+		Filename:       imgPath,
 		FetchTimestamp: uint(time.Now().Unix()),
 		Title:          title,
 		Author:         userName,
@@ -97,7 +104,7 @@ func (l *extList) contains(ext string) bool {
 }
 
 var (
-	allowedExtensions = extList{"png", "jpg", "jpeg", "bmp"}
+	allowedExtensions = extList{".png", ".jpg", ".jpeg", ".bmp"}
 )
 
 func isImage(filename string) bool {

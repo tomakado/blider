@@ -72,18 +72,6 @@ func (s *Storage) CleanUp() error {
 	}
 
 	log.Println("Local repository limit exceeded. Cleaning up...")
-	wallpapers, err := s.repository.GetWallpapers()
-	if err != nil {
-		return err
-	}
-
-	if len(wallpapers) < s.config.LocalStorageLimit {
-		return fmt.Errorf(
-			"local repository size (%d) and wallpapers count (%d) in DB mismatch",
-			len(files),
-			len(wallpapers),
-		)
-	}
 
 	for _, wp := range files {
 		wpFilename := wp.Name()

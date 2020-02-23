@@ -5,7 +5,6 @@ import (
 	"github.com/ildarkarymoff/blider/config"
 	"github.com/ildarkarymoff/blider/repository"
 	"os/exec"
-	"path/filepath"
 )
 
 type GnomeCmdBuilder struct {
@@ -17,13 +16,11 @@ func (b *GnomeCmdBuilder) Init(config *config.Config) {
 }
 
 func (b *GnomeCmdBuilder) Build(wallpaper *repository.Wallpaper) *exec.Cmd {
-	imgPath := filepath.Join(b.config.LocalStoragePath, wallpaper.Filename)
-
 	return exec.Command(
 		"gsettings",
 		"set",
 		"org.gnome.desktop.background",
 		"picture-uri",
-		fmt.Sprintf("file:///%s", imgPath),
+		fmt.Sprintf("file://%s", wallpaper.Filename),
 	)
 }

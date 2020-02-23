@@ -29,11 +29,25 @@ type SimpleDesktopsProvider struct {
 	maxFetchPages int
 }
 
-func (p *SimpleDesktopsProvider) Init(config *config.Config, repository *repository.Repository) {
+func (p *SimpleDesktopsProvider) Init(cfg *config.Config, repository *repository.Repository) {
 	log.Println("Initializing SimpleDesktopsProvider...")
-	p.config = config
+	p.config = cfg
 	p.repository = repository
-	p.maxFetchPages = p.config.MaxFetchPages
+	p.maxFetchPages = 10
+
+	providerConfig, cfgOk := p.config.Providers[config.ProviderSimpleDesktops]
+	if cfgOk {
+		maxFetchPages, mfpOk := (*providerConfig)["max_fetch_pages"].(int)
+		if mfpOk {
+			p.maxFetchPages = func(a, b int) int {
+				if a > b {
+					return a
+				}
+
+				return b
+			}(maxFetchPages, 0)
+		}
+	}
 }
 
 // Provide tries to parse and download images from http://simpledesktops.com.

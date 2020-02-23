@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+const (
+	ProviderSimpleDesktops = "simpledesktops"
+	ProviderLocal          = "local"
+)
+
 type Config struct {
 	// Period is a time interval between fetch & change iterations.
 	Period Period `json:"period,omitempty"`
@@ -18,13 +23,8 @@ type Config struct {
 	// LocalStorageLimit is maximum amount of locally stored images.
 	LocalStorageLimit int `json:"local_storage_limit"`
 	// DBPath is path to SQLite databse.
-	DBPath string `json:"db_path"`
-	// MaxFetchPages is maximum number of pages to look at.
-	// This parameter is being passed to provider and
-	// can be changed in runtime. For example, SimpleDesktopsProvider
-	// changes it on each iteration to optimize next
-	// wallpaper search.
-	MaxFetchPages int `json:"max_fetch_pages"`
+	DBPath    string `json:"db_path"`
+	Providers map[string]*map[string]interface{}
 }
 
 // FromFile tries to load configuration from JSON file.
@@ -65,10 +65,6 @@ func (c *Config) Fill() {
 	c.DBPath = strings.TrimSpace(c.DBPath)
 	if len(c.DBPath) == 0 {
 		c.DBPath = path.Join(homeDir, ".blider", "blider.sqlite")
-	}
-
-	if c.MaxFetchPages <= 0 {
-		c.MaxFetchPages = 10
 	}
 
 	if c.LocalStorageLimit < 0 {

@@ -26,6 +26,8 @@ type Wallpaper struct {
 	AuthorURL string
 	// ImgBuffer contains image bytes taken from provider.
 	ImgBuffer []byte
+	// ShouldSave specifies should Scheduler save image to local image storage
+	ShouldSave bool
 }
 
 // Repository allows other program modules to make operations with local SQLite database.

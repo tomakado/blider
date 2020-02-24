@@ -164,6 +164,38 @@ func (r *Repository) GetWallpaper(id int) (*Wallpaper, error) {
 	return wallpapers[0], nil
 }
 
+func (r *Repository) GetHistory(query *Query) ([]*Wallpaper, error) {
+	var filtered []*Wallpaper
+
+	wallpapers, err := r.GetWallpapers()
+	if err != nil {
+		return []*Wallpaper{},
+			fmt.Errorf(
+				"[repository.GetWallpapers] %v",
+				err,
+			)
+	}
+
+	for _, w := range wallpapers {
+		if query.Filters.Fits(w) {
+			filtered = append(filtered, w)
+		}
+	}
+
+	offset := 0
+	if len(filtered)-int(query.Pagination.Offset) >= 0 {
+		offset = int(query.Pagination.Offset)
+	}
+	offsetted := filtered[offset:]
+
+	limit := len(offsetted)
+	if len(offsetted) >= int(query.Pagination.Limit) {
+		limit = int(query.Pagination.Limit)
+	}
+
+	return offsetted[:limit], nil
+}
+
 // ClearHistory ...
 func (r *Repository) ClearHistory() error {
 	//noinspection SqlWithoutWhere
